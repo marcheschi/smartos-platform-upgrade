@@ -1,13 +1,13 @@
-smartos-platform-upgrade
+Danube cloud smartos-platform-upgrade
 ========================
 
-A script to simplify upgrades of USB booted SmartOS installations.
+A script to simplify upgrades of USB booted DC SmartOS installations.
 
 Installation
 ------------
 
 ```
-[root@acro ~]# curl -kL https://raw.githubusercontent.com/calmh/smartos-platform-upgrade/master/platform-upgrade > /opt/local/bin/platform-upgrade
+[root@acro ~]# curl -kL https://raw.githubusercontent.com/marcheschi/smartos-platform-upgrade/master/platform-upgrade > /opt/local/bin/platform-upgrade
 [root@acro ~]# chmod 755 /opt/local/bin/platform-upgrade
 ```
 
@@ -21,24 +21,30 @@ boot archive checksums are verified to make sure the files can be read
 correctly from the USB stick.
 
 ```
-[root@acro ~]# platform-upgrade
-Downloading latest platform (platform-20150306T202346Z.tgz)... OK
+[root@paolo ~]# ./platform-upgrade -u file:///zones/PAOLO/platform-20201105T132431Z.tgz -s file:///zones/PAOLO/md5.txt
+mkdir: Failed to make directory "/zones/tmp"; File exists
+ brand= esdc
+Actual kernel=  20200715T230801Z
+New Version=  20201105T132431Z
+Downloading platform-20201105T132431Z.tgz... OK
 Verifying checksum... OK
 Extracting latest platform... OK
 Marking release version... OK
-Checking current boot device... detected c0t0d0, mounted, OK
+Checking current boot device... detected c1t0d0, GPT labelusb path=  /dev/dsk/c1t0d0s2
+, mounted, OK
 Updating platform on boot device... OK
 Remounting boot device... OK
 Verifying kernel checksum on boot device... OK
 Verifying boot_archive checksum on boot device... OK
-Activating new platform on /dev/dsk/c0t0d0p1... OK
+Activating new platform on /dev/dsk/c1t0d0s2... please wait...Finished: OK
+
 
 Boot device upgraded. To do:
 
  1) Sanity check the contents of /tmp/tmp.I8aw9L/usb
  2) umount /dev/dsk/c0t0d0p1
  3) reboot
-[root@acro ~]# 
+
 ```
 
 Once the upgrade is done, verify that the contents of the USB stick looks sane,
