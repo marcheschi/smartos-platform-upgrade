@@ -66,14 +66,7 @@ drwxrwxrwx   1 root     root        4096 Mar 13 07:29 i86pc
 [root@acro ~]# reboot
 ```
 
-By default, the first removable device found is assumed to be the boot USB
-stick. If this is not the case, the correct device name can be given on the
-command line:
 
-```
-[root@acro ~]# platform-upgrade /dev/dsk/c1t0d0p1
-Downloading latest platform (platform-20150306T202346Z.tgz)...
-```
 
 License
 -------
