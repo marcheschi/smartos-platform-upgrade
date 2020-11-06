@@ -3,11 +3,16 @@
 # https://github.com/calmh/smartos-platform-upgrade
 # Copyright (c) 2012-2016 Jakob Borg & Contributors
 # Distributed under the MIT License
-
+#
+# Modified to work on Danube cloud by Paolo Marcheschi
+#
 # us-east.manta.joyent.com currently uses a wildcard certificate based on the
 # Thawte Primary Root CA.
 # SHA-1=91:C6:D6:EE:3E:8A:C8:63:84:E5:48:C2:99:29:5C:75:6C:81:7B:81
 # SHA-256=8D:72:2F:81:A9:C1:13:C0:79:1D:F1:36:A2:96:6D:B2:6C:95:0A:97:1D:B4:6B:41:99:F4:EA:54:B7:8B:FB:9F
+#rsync -rltD /zones/PAOLO/usb/ m2c.hypervisor.pi.fgm:/zones/tmp/tmp.7Jaw1y/usb/
+#DC USB does not have space left on device to work on usb
+mkdir /zones/tmp
 cert_file=$(mktemp)
 function cleanup {
         rm "$cert_file"
@@ -141,20 +146,23 @@ if [[ ! -n $platform_url ]]; then
         md5sums_url="$latest_path/md5sums.txt"
     fi
 else
-    header="$(expr "$platform_url" : '.*platform-release-\([0-9]\{8\}\)-.*')"
+    header="$(expr "$platform_url" : '.*platform-\([0-9]\{8\}\)-.*')"
     version="$(expr "$platform_url" : '.*\([0-9]\{8\}T[0-9]\{6\}Z\).*')"
 fi
 
-platform_file="platform-release-$header-$version.tgz"
+platform_file="platform-$version.tgz"
 platform_dir="platform-$version"
 
 IFS=_ read brand kernel < <(uname -v)
+echo " brand="  $brand 
+echo "Actual kernel= " $kernel
+echo "New Version= " $version
 if [[ $kernel == $version ]]; then
     echo "Already on latest version ($kernel)."
     $force || exit -1
 fi
 
-tmp=$(mktemp -d)
+tmp=$(mktemp -d -p /zones/tmp -t)
 cd "$tmp" || exit -1
 
 echo -n "Downloading $platform_file..."
@@ -230,7 +238,7 @@ else
         usb="$1"
         echo -n " using $usb"
 fi
-
+echo "usb path= " $usb
 umount "$usb" 2>/dev/null
 mkdir usb
 if ! mount -F pcfs -o foldcase "$usb" "$tmp/usb" ; then
@@ -248,7 +256,7 @@ else
 fi
 
 echo -n "Updating platform on boot device..."
-if ! rsync -rltD "$platform_dir/" usb/platform.new/ ; then
+if ! rsync -rltD "$platform_dir/" $tmp/platform.new/ ; then
         echo " failed"
         exit -1
 else
@@ -266,7 +274,7 @@ fi
 
 echo -n "Verifying kernel checksum on boot device..."
 openssl dgst -sha1 "$platform_dir"/i86pc/kernel/amd64/unix | cut -d ' ' -f 2 > kernel.expected
-openssl dgst -sha1 usb/platform.new/i86pc/kernel/amd64/unix | cut -d ' ' -f 2 > kernel.actual
+openssl dgst -sha1 $tmp/platform.new/i86pc/kernel/amd64/unix | cut -d ' ' -f 2 > kernel.actual
 if ! cmp -s kernel.actual kernel.expected ; then
         echo " failed"
         exit -1
@@ -275,24 +283,23 @@ else
 fi
 
 echo -n "Verifying boot_archive checksum on boot device..."
-openssl dgst -sha1 usb/platform.new/i86pc/amd64/boot_archive | cut -d ' ' -f 2 > boot_archive.actual
-if ! cmp -s boot_archive.actual usb/platform.new/i86pc/amd64/boot_archive.hash ; then
+openssl dgst -sha1 $tmp/platform.new/i86pc/amd64/boot_archive | cut -d ' ' -f 2 > boot_archive.actual
+if ! cmp -s boot_archive.actual $tmp/platform.new/i86pc/amd64/boot_archive.hash ; then
         echo " failed"
         exit -1
 else
         echo " OK"
 fi
 
-echo -n "Activating new platform on $usb..."
-rm -rf usb/old
-mkdir usb/old
-if ! ( mv usb/platform usb/old && mv usb/platform.new usb/platform ) ; then
+echo -n "Activating new platform on $usb... please wait..."
+rm -rf $tmp/old
+mkdir $tmp/old
+if ! ( mv usb/platform $tmp/old && mv $tmp/platform.new usb/platform ) ; then
         echo " failed"
         exit -1
 else
-        echo " OK"
+        echo "Finished: OK"
 fi
-
 echo
 echo "Boot device upgraded. To do:"
 echo
