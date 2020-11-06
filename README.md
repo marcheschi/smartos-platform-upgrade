@@ -7,6 +7,7 @@ Installation
 ------------
 
 ```
+Get new platform upgrade from Danubecloud main site
 [root@acro ~]# curl -kL https://raw.githubusercontent.com/marcheschi/smartos-platform-upgrade/master/platform-upgrade > /opt/local/bin/platform-upgrade
 [root@acro ~]# chmod 755 /opt/local/bin/platform-upgrade
 ```
